@@ -18,7 +18,7 @@ import (
 )
 
 type authError struct {
-	Message string `json:"message"`
+	Message string `json:"msg"`
 }
 
 type Auth struct {
