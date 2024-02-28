@@ -240,12 +240,12 @@ func (a *Auth) User(ctx context.Context, userToken string) (*User, error) {
 
 	injectAuthorizationHeader(req, userToken)
 	res := User{}
-	errRes := authError{}
+	errRes := ErrorResponse{}
 	hasCustomError, err := a.client.sendCustomRequest(req, &res, &errRes)
 	if err != nil {
 		return nil, err
 	} else if hasCustomError {
-		return nil, errors.New(fmt.Sprintf("%s", errRes.Message))
+		return nil, &errRes
 	}
 
 	return &res, nil
