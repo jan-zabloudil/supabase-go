@@ -121,6 +121,24 @@ func (a *Admin) GetUser(ctx context.Context, userID string) (*AdminUser, error) 
 	return &res, nil
 }
 
+func (a *Admin) GetUsers(ctx context.Context) ([]AdminUser, error) {
+	reqURL := fmt.Sprintf("%s/%s/users", a.client.BaseURL, AdminEndpoint)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", a.serviceKey))
+	var res struct {
+		Users []AdminUser `json:"users"`
+	}
+	if err := a.client.sendRequest(req, &res); err != nil {
+		return nil, err
+	}
+
+	return res.Users, nil
+}
+
 // Create a user
 func (a *Admin) CreateUser(ctx context.Context, params AdminUserParams) (*AdminUser, error) {
 	reqBody, _ := json.Marshal(params)
@@ -155,6 +173,21 @@ func (a *Admin) UpdateUser(ctx context.Context, userID string, params AdminUserP
 	}
 
 	return &res, nil
+}
+
+func (a *Admin) DeleteUser(ctx context.Context, userID string) error {
+	reqURL := fmt.Sprintf("%s/%s/users/%s", a.client.BaseURL, AdminEndpoint, userID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, reqURL, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", a.serviceKey))
+	if err := a.client.sendRequest(req, nil); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Update a user
