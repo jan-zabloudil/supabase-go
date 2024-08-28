@@ -17,10 +17,6 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-type authError struct {
-	Message string `json:"message"`
-}
-
 type Auth struct {
 	client *Client
 }
@@ -76,10 +72,6 @@ type AuthenticatedDetails struct {
 type authenticationError struct {
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description"`
-}
-
-type exchangeError struct {
-	Message string `json:"msg"`
 }
 
 // SignIn enters the user credentials and returns the current user if succeeded.
@@ -143,7 +135,7 @@ func (a *Auth) ExchangeCode(ctx context.Context, opts ExchangeCodeOpts) (*Authen
 
 	req.Header.Set("Content-Type", "application/json")
 	res := AuthenticatedDetails{}
-	errRes := exchangeError{}
+	errRes := ErrorResponse{}
 	hasCustomError, err := a.client.sendCustomRequest(req, &res, &errRes)
 	if err != nil {
 		return nil, err
@@ -163,7 +155,7 @@ func (a *Auth) SendMagicLink(ctx context.Context, email string) error {
 		return err
 	}
 
-	errRes := authError{}
+	errRes := ErrorResponse{}
 	hasCustomError, err := a.client.sendCustomRequest(req, nil, &errRes)
 	if err != nil {
 		return err
@@ -240,7 +232,7 @@ func (a *Auth) User(ctx context.Context, userToken string) (*User, error) {
 
 	injectAuthorizationHeader(req, userToken)
 	res := User{}
-	errRes := authError{}
+	errRes := ErrorResponse{}
 	hasCustomError, err := a.client.sendCustomRequest(req, &res, &errRes)
 	if err != nil {
 		return nil, err
@@ -264,7 +256,7 @@ func (a *Auth) UpdateUser(ctx context.Context, userToken string, updateData map[
 	injectAuthorizationHeader(req, userToken)
 
 	res := User{}
-	errRes := authError{}
+	errRes := ErrorResponse{}
 	hasCustomError, err := a.client.sendCustomRequest(req, &res, &errRes)
 	if err != nil {
 		return nil, err
