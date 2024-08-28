@@ -29,8 +29,9 @@ type Client struct {
 }
 
 type ErrorResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"msg"`
+	Code      int    `json:"code"`
+	ErrorCode string `json:"error_code"`
+	Message   string `json:"msg"`
 }
 
 func (err *ErrorResponse) Error() string {
