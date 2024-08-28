@@ -157,6 +157,21 @@ func (a *Admin) UpdateUser(ctx context.Context, userID string, params AdminUserP
 	return &res, nil
 }
 
+func (a *Admin) DeleteUser(ctx context.Context, userID string) error {
+	reqURL := fmt.Sprintf("%s/%s/users/%s", a.client.BaseURL, AdminEndpoint, userID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, reqURL, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", a.serviceKey))
+	if err := a.client.sendRequest(req, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Update a user
 func (a *Admin) GenerateLink(ctx context.Context, params GenerateLinkParams) (*GenerateLinkResponse, error) {
 	reqBody, _ := json.Marshal(params)
