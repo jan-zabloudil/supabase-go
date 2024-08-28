@@ -140,7 +140,7 @@ func (a *Auth) ExchangeCode(ctx context.Context, opts ExchangeCodeOpts) (*Authen
 	if err != nil {
 		return nil, err
 	} else if hasCustomError {
-		return nil, errors.New(errRes.Message)
+		return nil, &errRes
 	}
 
 	return &res, err
@@ -160,7 +160,7 @@ func (a *Auth) SendMagicLink(ctx context.Context, email string) error {
 	if err != nil {
 		return err
 	} else if hasCustomError {
-		return errors.New(fmt.Sprintf("%s", errRes.Message))
+		return &errRes
 	}
 
 	return nil
@@ -237,7 +237,7 @@ func (a *Auth) User(ctx context.Context, userToken string) (*User, error) {
 	if err != nil {
 		return nil, err
 	} else if hasCustomError {
-		return nil, errors.New(fmt.Sprintf("%s", errRes.Message))
+		return nil, &errRes
 	}
 
 	return &res, nil
@@ -261,7 +261,7 @@ func (a *Auth) UpdateUser(ctx context.Context, userToken string, updateData map[
 	if err != nil {
 		return nil, err
 	} else if hasCustomError {
-		return nil, errors.New(fmt.Sprintf("%s", errRes.Message))
+		return nil, &errRes
 	}
 
 	return &res, nil
