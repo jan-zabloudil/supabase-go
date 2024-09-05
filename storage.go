@@ -200,7 +200,7 @@ type FileResponse struct {
 }
 
 type FileErrorResponse struct {
-	Status     string `json:"statusCode"`
+	StatusCode string `json:"statusCode"`
 	ShortError string `json:"error"`
 	Message    string `json:"message"`
 }
@@ -234,8 +234,13 @@ type ListFileRequest struct {
 	Prefix string `json:"prefix"`
 }
 
-type SignedUrlResponse struct {
-	SignedUrl string `json:"signedURL"`
+type SignedURLForUploadResponse struct {
+	SignedURL string `json:"url"`
+	Token     string `json:"token"`
+}
+
+type SignedURLForDownloadResponse struct {
+	SignedURL string `json:"signedURL"`
 }
 
 const (
@@ -366,44 +371,76 @@ func (f *file) Move(fromPath string, toPath string) FileResponse {
 	return response
 }
 
-// CreatSignedUrl create a signed url for a file object
-func (f *file) CreatSignedUrl(filePath string, expiresIn int) SignedUrlResponse {
-	_json, _ := json.Marshal(map[string]interface{}{
+func (f *file) CreateSignedURLForUpload(filePath string, expiresIn int) (*SignedURLForUploadResponse, error) {
+	reqBody, err := json.Marshal(map[string]interface{}{
 		"expiresIn": expiresIn,
 	})
-
-	reqURL := fmt.Sprintf("%s/%s/object/sign/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
-	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(_json))
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	// Route for generating signed url for upload: /object/upload/sign/:bucketId/:objectKey
+	// See https://supabase.github.io/storage
+	reqURL := fmt.Sprintf("%s/%s/object/upload/sign/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request: %w", err)
 	}
 
 	injectAuthorizationHeader(req, f.storage.client.apiKey)
+	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	res, err := client.Do(req)
+	var resp SignedURLForUploadResponse
+	var errResp FileErrorResponse
+	hasCustomError, err := f.storage.client.sendCustomRequest(req, &resp, &errResp)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to send http request: %w", err)
+	}
+	if hasCustomError {
+		return nil, &errResp
 	}
 
-	body, err := io.ReadAll(res.Body)
+	resp.SignedURL = f.storage.client.BaseURL + resp.SignedURL
+	return &resp, nil
+}
+
+func (f *file) CreateSignedURLForDownload(filePath string, expiresIn int) (*SignedURLForDownloadResponse, error) {
+	reqBody, err := json.Marshal(map[string]interface{}{
+		"expiresIn": expiresIn,
+	})
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	var response SignedUrlResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		panic(err)
+	// Route for generating signed url for download: /object/sign/:bucketId/:objectKey
+	// See https://supabase.github.io/storage
+	reqURL := fmt.Sprintf("%s/%s/object/sign/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request: %w", err)
 	}
-	response.SignedUrl = f.storage.client.BaseURL + response.SignedUrl
 
-	return response
+	injectAuthorizationHeader(req, f.storage.client.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	var resp SignedURLForDownloadResponse
+	var errResp FileErrorResponse
+	hasCustomError, err := f.storage.client.sendCustomRequest(req, &resp, &errResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send http request: %w", err)
+	}
+	if hasCustomError {
+		return nil, &errResp
+	}
+
+	resp.SignedURL = f.storage.client.BaseURL + resp.SignedURL
+	return &resp, nil
 }
 
 // GetPublicUrl get a public signed url of a file object
-func (f *file) GetPublicUrl(filePath string) SignedUrlResponse {
-	var response SignedUrlResponse
-	response.SignedUrl = fmt.Sprintf("%s/%s/object/public/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
+func (f *file) GetPublicUrl(filePath string) SignedURLForDownloadResponse {
+	var response SignedURLForDownloadResponse
+	response.SignedURL = fmt.Sprintf("%s/%s/object/public/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
 	return response
 }
 
@@ -564,7 +601,7 @@ func (f *file) Download(filePath string) ([]byte, error) {
 			panic(err)
 		}
 
-		if resErr.Status == "404" {
+		if resErr.StatusCode == "404" {
 			return nil, ErrNotFound
 		}
 
