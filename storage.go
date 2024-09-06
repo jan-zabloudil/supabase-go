@@ -402,7 +402,8 @@ func (f *file) CreateSignedURLForUpload(filePath string, expiresIn int) (*Signed
 		return nil, &errResp
 	}
 
-	resp.SignedURL = f.storage.client.BaseURL + resp.SignedURL
+	// removeEmptyFolder function is used to prevent double slashes in the URL
+	resp.SignedURL = removeEmptyFolder(fmt.Sprintf("%s/%s/%s", f.storage.client.BaseURL, StorageEndpoint, resp.SignedURL))
 	return &resp, nil
 }
 
@@ -435,7 +436,8 @@ func (f *file) CreateSignedURLForDownload(filePath string, expiresIn int) (*Sign
 		return nil, &errResp
 	}
 
-	resp.SignedURL = f.storage.client.BaseURL + resp.SignedURL
+	// removeEmptyFolder function is used to prevent double slashes in the URL
+	resp.SignedURL = removeEmptyFolder(fmt.Sprintf("%s/%s/%s", f.storage.client.BaseURL, StorageEndpoint, resp.SignedURL))
 	return &resp, nil
 }
 
