@@ -444,6 +444,30 @@ func (f *file) GetPublicUrl(filePath string) SignedURLForDownloadResponse {
 	return response
 }
 
+// Remove deletes a single object from a storage bucket
+func (f *file) Remove(filePath string) error {
+	// Route for deleting object: /object/:bucketId/:objectKey
+	// See https://supabase.github.io/storage
+	reqURL := fmt.Sprintf("%s/%s/object/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
+	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create http request: %w", err)
+	}
+
+	injectAuthorizationHeader(req, f.storage.client.apiKey)
+
+	var errResp FileErrorResponse
+	hasCustomError, err := f.storage.client.sendCustomRequest(req, nil, &errResp)
+	if err != nil {
+		return fmt.Errorf("failed to send http request: %w", err)
+	}
+	if hasCustomError {
+		return &errResp
+	}
+
+	return nil
+}
+
 // BulkRemove deletes multiple files from a storage bucket
 func (f *file) BulkRemove(filePaths []string) FileResponse {
 	_json, _ := json.Marshal(map[string]interface{}{
