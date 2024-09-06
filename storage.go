@@ -199,6 +199,8 @@ type FileResponse struct {
 	Message string `json:"message"`
 }
 
+// FileErrorResponse TODO StatusCode should be int
+// Write custom unmarshaler for statusCode (API returns statusCode field as string)
 type FileErrorResponse struct {
 	StatusCode string `json:"statusCode"`
 	ShortError string `json:"error"`
