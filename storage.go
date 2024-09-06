@@ -376,7 +376,7 @@ func (f *file) CreateSignedURLForUpload(filePath string, expiresIn int) (*Signed
 		"expiresIn": expiresIn,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		return nil, fmt.Errorf("marshaling request body: %w", err)
 	}
 
 	// Route for generating signed url for upload: /object/upload/sign/:bucketId/:objectKey
@@ -384,7 +384,7 @@ func (f *file) CreateSignedURLForUpload(filePath string, expiresIn int) (*Signed
 	reqURL := fmt.Sprintf("%s/%s/object/upload/sign/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
 	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(reqBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create http request: %w", err)
+		return nil, fmt.Errorf("creating http request: %w", err)
 	}
 
 	injectAuthorizationHeader(req, f.storage.client.apiKey)
@@ -394,7 +394,7 @@ func (f *file) CreateSignedURLForUpload(filePath string, expiresIn int) (*Signed
 	var errResp FileErrorResponse
 	hasCustomError, err := f.storage.client.sendCustomRequest(req, &resp, &errResp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send http request: %w", err)
+		return nil, fmt.Errorf("sending http request: %w", err)
 	}
 	if hasCustomError {
 		return nil, &errResp
@@ -409,7 +409,7 @@ func (f *file) CreateSignedURLForDownload(filePath string, expiresIn int) (*Sign
 		"expiresIn": expiresIn,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		return nil, fmt.Errorf("marshaling request body: %w", err)
 	}
 
 	// Route for generating signed url for download: /object/sign/:bucketId/:objectKey
@@ -417,7 +417,7 @@ func (f *file) CreateSignedURLForDownload(filePath string, expiresIn int) (*Sign
 	reqURL := fmt.Sprintf("%s/%s/object/sign/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
 	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(reqBody))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create http request: %w", err)
+		return nil, fmt.Errorf("creating http request: %w", err)
 	}
 
 	injectAuthorizationHeader(req, f.storage.client.apiKey)
@@ -427,7 +427,7 @@ func (f *file) CreateSignedURLForDownload(filePath string, expiresIn int) (*Sign
 	var errResp FileErrorResponse
 	hasCustomError, err := f.storage.client.sendCustomRequest(req, &resp, &errResp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send http request: %w", err)
+		return nil, fmt.Errorf("sending http request: %w", err)
 	}
 	if hasCustomError {
 		return nil, &errResp
@@ -451,7 +451,7 @@ func (f *file) Remove(filePath string) error {
 	reqURL := fmt.Sprintf("%s/%s/object/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
 	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create http request: %w", err)
+		return fmt.Errorf("creating http request: %w", err)
 	}
 
 	injectAuthorizationHeader(req, f.storage.client.apiKey)
@@ -459,7 +459,7 @@ func (f *file) Remove(filePath string) error {
 	var errResp FileErrorResponse
 	hasCustomError, err := f.storage.client.sendCustomRequest(req, nil, &errResp)
 	if err != nil {
-		return fmt.Errorf("failed to send http request: %w", err)
+		return fmt.Errorf("sending http request: %w", err)
 	}
 	if hasCustomError {
 		return &errResp
