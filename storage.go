@@ -444,8 +444,8 @@ func (f *file) GetPublicUrl(filePath string) SignedURLForDownloadResponse {
 	return response
 }
 
-// Remove deletes a file object
-func (f *file) Remove(filePaths []string) FileResponse {
+// BulkRemove deletes multiple files from a storage bucket
+func (f *file) BulkRemove(filePaths []string) FileResponse {
 	_json, _ := json.Marshal(map[string]interface{}{
 		"prefixes": filePaths,
 	})
