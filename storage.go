@@ -437,8 +437,8 @@ func (f *file) CreateSignedURLForDownload(filePath string, expiresIn int) (*Sign
 	return &resp, nil
 }
 
-// GetPublicUrl get a public signed url of a file object
-func (f *file) GetPublicUrl(filePath string) SignedURLForDownloadResponse {
+// GetPublicURL get a public signed url of a file object
+func (f *file) GetPublicURL(filePath string) SignedURLForDownloadResponse {
 	var response SignedURLForDownloadResponse
 	response.SignedURL = fmt.Sprintf("%s/%s/object/public/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
 	return response
