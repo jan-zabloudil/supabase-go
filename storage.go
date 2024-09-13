@@ -603,12 +603,12 @@ func (f *file) Copy(fromPath, toPath string) FileResponse {
 	return response
 }
 
-// Download  retrieves a file object, if it exists, otherwise return file response
+// Download  retrieves a file object, if it exists, otherwise returns file error response
 func (f *file) Download(filePath string) ([]byte, error) {
 	reqURL := fmt.Sprintf("%s/%s/object/authenticated/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
 	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("creating http request: %w", err)
 	}
 
 	injectAuthorizationHeader(req, f.storage.client.apiKey)
@@ -616,19 +616,19 @@ func (f *file) Download(filePath string) ([]byte, error) {
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("sending http request: %w", err)
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("reading response body: %w", err)
 	}
 
-	// when not success, supabase will return json insted of file
-	if res.StatusCode != 200 {
+	// If the status code is not 200, then the response body contains an error message
+	if res.StatusCode != http.StatusOK {
 		var resErr *FileErrorResponse
 		if err := json.Unmarshal(body, &resErr); err != nil {
-			panic(err)
+			return nil, fmt.Errorf("unmarshaling error response: %w", err)
 		}
 
 		if resErr.StatusCode == "404" {
