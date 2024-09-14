@@ -261,6 +261,10 @@ type FileUploadOptions struct {
 	Upsert       bool
 }
 
+type FileMetadata struct {
+	MediaType string
+}
+
 func (f *file) UploadOrUpdate(path string, data io.Reader, update bool, opts *FileUploadOptions) FileResponse {
 	// use default options, then override with whatever is passed in opts
 	mergedOpts := FileUploadOptions{
@@ -639,6 +643,50 @@ func (f *file) Download(filePath string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+// GetFileMetadata retrieves the metadata of a file object.
+// At the moment it returns only the media type of the file.
+func (f *file) GetFileMetadata(filePath string) (*FileMetadata, error) {
+	// Route for getting metadata of object: /object/info/authenticated/:bucketId/:objectKey
+	// See https://supabase.github.io/storage
+	reqURL := fmt.Sprintf("%s/%s/object/info/authenticated/%s/%s", f.storage.client.BaseURL, StorageEndpoint, f.BucketId, filePath)
+	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating http request: %w", err)
+	}
+
+	injectAuthorizationHeader(req, f.storage.client.apiKey)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sending http request: %w", err)
+	}
+
+	// If the status code is 200, then the response header contains the media type of the file
+	if res.StatusCode == http.StatusOK {
+		return &FileMetadata{
+			MediaType: res.Header.Get("Content-Type"),
+		}, nil
+	}
+
+	// If the status code is not 200, then the response body contains an error message
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	var resErr *FileErrorResponse
+	if err := json.Unmarshal(body, &resErr); err != nil {
+		return nil, fmt.Errorf("unmarshaling error response: %w", err)
+	}
+
+	if resErr.StatusCode == "404" {
+		return nil, ErrNotFound
+	}
+
+	return nil, resErr
 }
 
 func removeEmptyFolder(filePath string) string {
